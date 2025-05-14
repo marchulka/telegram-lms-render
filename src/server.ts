@@ -30,7 +30,7 @@ app.post('/webhook', async (req, res) => {
     })
   }
 
-  await fetch(f"{SUPABASE_URL}/rest/v1/attempts", {
+  await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
