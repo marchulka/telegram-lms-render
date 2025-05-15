@@ -2,15 +2,29 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
+import * as Sentry from '@sentry/node'
 
 dotenv.config()
-const app = express()
-app.use(bodyParser.json())
 
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 1.0,
+})
+
+const app = express()
 const PORT = process.env.PORT || 3000
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
+
+if (!TELEGRAM_TOKEN || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Ошибка: переменные окружения не заданы.')
+  process.exit(1)
+}
+
+app.use(Sentry.Handlers.requestHandler())
+app.use(Sentry.Handlers.tracingHandler())
+app.use(bodyParser.json())
 
 // Память бота: кто уже получал приветствие (сброс при перезапуске)
 const greetedUsers = new Set<string>()
@@ -21,15 +35,15 @@ app.post('/webhook', (req, res) => {
   const text = message?.text
   const is_bot = message?.from?.is_bot
 
-  res.sendStatus(200) // немедленный ответ Telegram
+  res.sendStatus(200) // немедленно отвечаем Telegram
 
   if (!chat_id || !text || is_bot) return
 
   const userKey = `telegram_${chat_id}`
 
+  // Обработка асинхронно без задержки ответа Telegram
   ;(async () => {
     try {
-      // Только первый раз отправляем приветствие
       if (text === '/start' && !greetedUsers.has(userKey)) {
         greetedUsers.add(userKey)
 
@@ -43,7 +57,6 @@ app.post('/webhook', (req, res) => {
         })
       }
 
-      // Сохраняем попытку в Supabase
       await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
         method: 'POST',
         headers: {
@@ -60,15 +73,19 @@ app.post('/webhook', (req, res) => {
           created_at: new Date().toISOString()
         })
       })
-    } catch (error) {
-      console.error('❌ Ошибка Webhook:', error)
+
+    } catch (err) {
+      Sentry.captureException(err)
+      console.error('❌ Ошибка Webhook:', err)
     }
   })()
 })
 
 app.get('/', (req, res) => {
-  res.send('✅ Бот работает на Render!')
+  res.send('✅ Бот работает на Render! Sentry подключён.')
 })
+
+app.use(Sentry.Handlers.errorHandler())
 
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`)
