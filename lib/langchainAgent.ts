@@ -1,24 +1,21 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { initializeAgentExecutorWithOptions } from 'langchain/agents';
-import { Calculator } from '@langchain/community/tools/calculator';
-import { SerpAPI } from '@langchain/community/tools/serpapi';
-import dotenv from 'dotenv';
+import { ChatOpenAI } from 'langchain/chat_models/openai'
+import { initializeAgentExecutorWithOptions } from 'langchain/agents'
+import { Calculator } from 'langchain/tools'
 
-dotenv.config();
-
-export async function runAgent(prompt: string) {
+export async function runAgent(query: string): Promise<string> {
   const model = new ChatOpenAI({
-    modelName: 'gpt-4',
+    modelName: 'gpt-4o',
     temperature: 0.7,
     openAIApiKey: process.env.OPENAI_API_KEY,
-  });
+  })
 
-  const tools = [new SerpAPI(), new Calculator()];
+  const tools = [new Calculator()]
+
   const executor = await initializeAgentExecutorWithOptions(tools, model, {
     agentType: 'openai-functions',
     verbose: true,
-  });
+  })
 
-  const result = await executor.run(prompt);
-  return result;
-} 
+  const result = await executor.run(query)
+  return result
+}
