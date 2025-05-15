@@ -14,62 +14,71 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
 
 const greetedUsers = new Set<string>()
 
-app.post('/webhook', (req, res) => {
-  const message = req.body?.message
-  const chat_id = message?.chat?.id
-  const text = message?.text
-  const is_bot = message?.from?.is_bot
+// NEW: лог каждого запроса
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url}`)
+  next()
+})
 
-  res.sendStatus(200)
+// Тестовый ping
+app.get('/ping', (req, res) => {
+  res.send('🏓 Pong from bot server!')
+})
 
-  if (!chat_id || !text || is_bot) return
+app.post('/webhook', async (req, res) => {
+  try {
+    const message = req.body?.message
+    const chat_id = message?.chat?.id
+    const text = message?.text
+    const is_bot = message?.from?.is_bot
 
-  const userKey = `telegram_${chat_id}`
+    console.log('📦 Получено сообщение:', JSON.stringify(message, null, 2))
 
-  ;(async () => {
-    try {
-      if (text === '/start' && !greetedUsers.has(userKey)) {
-        greetedUsers.add(userKey)
+    res.sendStatus(200) // Сразу отвечаем Telegram
 
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id,
-            text: '👋 Render Webhook на связи! Добро пожаловать в LMS Fishby.'
-          })
-        })
-      }
+    if (!chat_id || !text || is_bot) {
+      console.log('⚠️ Неверное сообщение или от бота')
+      return
+    }
 
-      if (text === 'ошибка') {
-        console.error('🧨 Искусственная ошибка для теста')
-        throw new Error('Ошибка тестирования!')
-      }
+    const userKey = `telegram_${chat_id}`
 
-      await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
+    if (text === '/start' && !greetedUsers.has(userKey)) {
+      greetedUsers.add(userKey)
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: userKey,
-          question: 'demo',
-          selected: text,
-          correct: true,
-          bot_id: 'default_bot',
-          created_at: new Date().toISOString()
+          chat_id,
+          text: '👋 Render Webhook на связи! Добро пожаловать в LMS Fishby.'
         })
       })
-    } catch (error) {
-      console.error('❌ Ошибка Webhook:', error)
     }
-  })()
+
+    await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        user_id: userKey,
+        question: 'diagnostic',
+        selected: text,
+        correct: true,
+        bot_id: 'default_bot',
+        created_at: new Date().toISOString()
+      })
+    })
+
+  } catch (error) {
+    console.error('❌ Ошибка Webhook:', error)
+  }
 })
 
 app.get('/', (req, res) => {
-  res.send('✅ Бот работает на Render!')
+  res.send('✅ LMS бот работает на Render')
 })
 
 app.listen(PORT, () => {
