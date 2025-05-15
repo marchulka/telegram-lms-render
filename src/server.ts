@@ -17,16 +17,10 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
 
-if (!TELEGRAM_TOKEN || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('❌ Ошибка: переменные окружения не заданы.')
-  process.exit(1)
-}
-
 app.use(Sentry.Handlers.requestHandler())
 app.use(Sentry.Handlers.tracingHandler())
 app.use(bodyParser.json())
 
-// Память бота: кто уже получал приветствие (сброс при перезапуске)
 const greetedUsers = new Set<string>()
 
 app.post('/webhook', (req, res) => {
@@ -35,18 +29,16 @@ app.post('/webhook', (req, res) => {
   const text = message?.text
   const is_bot = message?.from?.is_bot
 
-  res.sendStatus(200) // немедленно отвечаем Telegram
+  res.sendStatus(200)
 
   if (!chat_id || !text || is_bot) return
 
   const userKey = `telegram_${chat_id}`
 
-  // Обработка асинхронно без задержки ответа Telegram
   ;(async () => {
     try {
       if (text === '/start' && !greetedUsers.has(userKey)) {
         greetedUsers.add(userKey)
-
         await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
