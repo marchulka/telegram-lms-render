@@ -49,6 +49,9 @@ app.post('/webhook', (req, res) => {
         })
       }
 
+      // ⛔ НАМЕРЕННО ГЕНЕРИРУЕМ ОШИБКУ
+      throw new Error("🚨 Это тестовая ошибка от Fishby Webhook");
+
       await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
         method: 'POST',
         headers: {
