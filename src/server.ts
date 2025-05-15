@@ -3,23 +3,18 @@ import bodyParser from 'body-parser'
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
 import * as Sentry from '@sentry/node'
-import { HttpFunctionIntegration } from '@sentry/integrations'
 
 dotenv.config()
 const app = express()
 
-// 🧠 Sentry инициализация
+// 🧠 Инициализация Sentry
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-  integrations: [
-    new HttpFunctionIntegration(),
-  ],
   tracesSampleRate: 1.0,
-  environment: 'production'
+  environment: 'production',
 })
 
-app.use(Sentry.Handlers.requestHandler())
-
+app.use(Sentry.Handlers.requestHandler()) // ✔️ Работает в v7.x
 app.use(bodyParser.json())
 
 const PORT = process.env.PORT || 3000
@@ -56,8 +51,9 @@ app.post('/webhook', (req, res) => {
         })
       }
 
-      // 💥 Сгенерировать ошибку для теста Sentry
-      throw new Error("🚨 Это тестовая ошибка от Fishby Webhook")
+      if (text === 'ошибка') {
+        throw new Error('🧨 Искусственная ошибка для проверки Sentry')
+      }
 
       await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
         method: 'POST',
