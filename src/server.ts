@@ -14,7 +14,18 @@ Sentry.init({
   environment: 'production',
 })
 
-app.use(Sentry.Handlers.requestHandler()) // ✔️ Работает в v7.x
+// 💡 Ручной middleware подключения — без Sentry.Handlers
+app.use((req, res, next) => {
+  Sentry.getCurrentHub().configureScope(scope => {
+    scope.setContext('request', {
+      url: req.originalUrl,
+      method: req.method,
+      body: req.body,
+    })
+  })
+  next()
+})
+
 app.use(bodyParser.json())
 
 const PORT = process.env.PORT || 3000
@@ -77,8 +88,6 @@ app.post('/webhook', (req, res) => {
     }
   })()
 })
-
-app.use(Sentry.Handlers.errorHandler())
 
 app.get('/', (req, res) => {
   res.send('✅ Бот работает на Render!')
