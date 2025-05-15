@@ -17,11 +17,14 @@ app.post('/webhook', async (req, res) => {
     const message = req.body?.message
     const chat_id = message?.chat?.id
     const text = message?.text
+    const is_bot = message?.from?.is_bot
 
-    if (!chat_id || !text) {
-      return res.sendStatus(400)
+    // 💡 Защита от бесконечного цикла: игнорируем сообщения, отправленные ботом
+    if (!chat_id || !text || is_bot) {
+      return res.sendStatus(200)
     }
 
+    // Ответ на команду /start
     if (text === '/start') {
       await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -30,6 +33,7 @@ app.post('/webhook', async (req, res) => {
       })
     }
 
+    // Запись в Supabase
     await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
       method: 'POST',
       headers: {
