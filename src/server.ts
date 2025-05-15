@@ -2,30 +2,9 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
-import * as Sentry from '@sentry/node'
 
 dotenv.config()
 const app = express()
-
-// 🧠 Инициализация Sentry
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  tracesSampleRate: 1.0,
-  environment: 'production',
-})
-
-// 💡 Ручной middleware подключения — без Sentry.Handlers
-app.use((req, res, next) => {
-  Sentry.getCurrentHub().configureScope(scope => {
-    scope.setContext('request', {
-      url: req.originalUrl,
-      method: req.method,
-      body: req.body,
-    })
-  })
-  next()
-})
-
 app.use(bodyParser.json())
 
 const PORT = process.env.PORT || 3000
@@ -63,7 +42,8 @@ app.post('/webhook', (req, res) => {
       }
 
       if (text === 'ошибка') {
-        throw new Error('🧨 Искусственная ошибка для проверки Sentry')
+        console.error('🧨 Искусственная ошибка для теста')
+        throw new Error('Ошибка тестирования!')
       }
 
       await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
@@ -84,7 +64,6 @@ app.post('/webhook', (req, res) => {
       })
     } catch (error) {
       console.error('❌ Ошибка Webhook:', error)
-      Sentry.captureException(error)
     }
   })()
 })
