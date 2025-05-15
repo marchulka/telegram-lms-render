@@ -3,23 +3,29 @@ import bodyParser from 'body-parser'
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
 import * as Sentry from '@sentry/node'
+import { HttpFunctionIntegration } from '@sentry/integrations'
 
 dotenv.config()
+const app = express()
 
+// 🧠 Sentry инициализация
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  integrations: [
+    new HttpFunctionIntegration(),
+  ],
   tracesSampleRate: 1.0,
+  environment: 'production'
 })
 
-const app = express()
+app.use(Sentry.Handlers.requestHandler())
+
+app.use(bodyParser.json())
+
 const PORT = process.env.PORT || 3000
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
-
-app.use(Sentry.Handlers.requestHandler())
-app.use(Sentry.Handlers.tracingHandler())
-app.use(bodyParser.json())
 
 const greetedUsers = new Set<string>()
 
@@ -39,6 +45,7 @@ app.post('/webhook', (req, res) => {
     try {
       if (text === '/start' && !greetedUsers.has(userKey)) {
         greetedUsers.add(userKey)
+
         await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -49,8 +56,8 @@ app.post('/webhook', (req, res) => {
         })
       }
 
-      // ⛔ НАМЕРЕННО ГЕНЕРИРУЕМ ОШИБКУ
-      throw new Error("🚨 Это тестовая ошибка от Fishby Webhook");
+      // 💥 Сгенерировать ошибку для теста Sentry
+      throw new Error("🚨 Это тестовая ошибка от Fishby Webhook")
 
       await fetch(`${SUPABASE_URL}/rest/v1/attempts`, {
         method: 'POST',
@@ -68,19 +75,18 @@ app.post('/webhook', (req, res) => {
           created_at: new Date().toISOString()
         })
       })
-
-    } catch (err) {
-      Sentry.captureException(err)
-      console.error('❌ Ошибка Webhook:', err)
+    } catch (error) {
+      console.error('❌ Ошибка Webhook:', error)
+      Sentry.captureException(error)
     }
   })()
 })
 
-app.get('/', (req, res) => {
-  res.send('✅ Бот работает на Render! Sentry подключён.')
-})
-
 app.use(Sentry.Handlers.errorHandler())
+
+app.get('/', (req, res) => {
+  res.send('✅ Бот работает на Render!')
+})
 
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`)
