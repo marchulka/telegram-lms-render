@@ -1,7 +1,7 @@
 import { ChatOpenAI } from 'langchain/chat_models/openai';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
-import { Calculator } from 'langchain/tools';
-import { AIMessage, HumanMessage } from 'langchain/schema';
+import { Calculator } from 'langchain/tools/calculator';
+import { HumanMessage } from 'langchain/schema';
 
 export async function runAgent(query: string): Promise<string> {
   try {
@@ -26,9 +26,7 @@ export async function runAgent(query: string): Promise<string> {
 
     console.log('⚙️ Агент инициализирован. Запрос:', query);
 
-    const result = await executor.run([
-      new HumanMessage(query)
-    ]);
+    const result = await executor.run([new HumanMessage(query)]);
 
     console.log('✅ Ответ агента:', result);
 
