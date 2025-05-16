@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { runAgent } from '@/lib/langchainAgent'; // ✅ абсолютный импорт (работает с tsconfig-paths)
+import { runAgent } from '../../lib/langchainAgent'; // ✅ простой импорт без @
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const answer = await runAgent(query);
-    res.status(200).json({ answer }); // ✅ более очевидное поле
+    res.status(200).json({ answer }); // 🟢 ответ будет под ключом "answer"
   } catch (error) {
     console.error('❌ Ошибка LangChain:', error);
     res.status(500).json({ error: 'LangChain agent error' });
