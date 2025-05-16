@@ -14,7 +14,7 @@ export async function runAgent(query: string): Promise<string> {
     });
 
     const executor = await initializeAgentExecutorWithOptions([], model, {
-      agentType: 'openai-functions',
+      agentType: 'zero-shot-react-description', // 👈 это ключевое!
       verbose: true,
     });
 
