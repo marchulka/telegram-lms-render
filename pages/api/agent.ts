@@ -1,23 +1,22 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { runAgent } from '../../lib/langchainAgent'
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { runAgent } from '@/lib/langchainAgent'; // ✅ абсолютный импорт (работает с tsconfig-paths)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { query } = req.body
+  const { query } = req.body;
 
-  if (!query) {
-    return res.status(400).json({ error: 'No query provided' })
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ error: 'No valid query provided' });
   }
 
   try {
-    const result = await runAgent(query)
-    res.status(200).json({ result })
+    const answer = await runAgent(query);
+    res.status(200).json({ answer }); // ✅ более очевидное поле
   } catch (error) {
-    console.error('? Ошибка LangChain:', error)
-    res.status(500).json({ error: 'LangChain agent error' })
+    console.error('❌ Ошибка LangChain:', error);
+    res.status(500).json({ error: 'LangChain agent error' });
   }
 }
-// 🤖 force build
