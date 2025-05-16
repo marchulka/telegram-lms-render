@@ -1,5 +1,6 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
+import { DynamicTool } from 'langchain/tools';
 
 export async function runAgent(query: string): Promise<string> {
   try {
@@ -13,10 +14,21 @@ export async function runAgent(query: string): Promise<string> {
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
-    const executor = await initializeAgentExecutorWithOptions([], model, {
-      agentType: 'zero-shot-react-description', // 👈 это ключевое!
-      verbose: true,
+    // ⚠️ Временный мок-инструмент
+    const dummyTool = new DynamicTool({
+      name: "echoTool",
+      description: "Возвращает то же, что и получил",
+      func: async (input: string) => `Echo: ${input}`,
     });
+
+    const executor = await initializeAgentExecutorWithOptions(
+      [dummyTool],
+      model,
+      {
+        agentType: 'openai-functions',
+        verbose: true,
+      }
+    );
 
     const result = await executor.run(query);
     return result;
