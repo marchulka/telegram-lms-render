@@ -13,8 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const answer = await runAgent(query);
-    res.status(200).json({ answer });
+    const result = await runAgent(query);
+
+    // ✅ Указываем правильную кодировку и тип
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(200).json({ answer: result });
   } catch (error) {
     console.error('❌ Ошибка LangChain:', error);
     res.status(500).json({ answer: '⚠️ Ошибка при выполнении запроса. Попробуйте позже.' });
