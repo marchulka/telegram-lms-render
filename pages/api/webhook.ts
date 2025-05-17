@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json()
     console.log("🤖 Ответ от агента:", data)
 
-    const reply = data?.result ?? '⚠️ Агент не ответил.'
+    const reply = data?.answer ?? '⚠️ Агент не ответил.'
 
     // 📤 Отправка в Telegram
     console.log("📤 Отправка в Telegram:", chatId, reply)
