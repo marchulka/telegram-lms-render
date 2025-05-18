@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 🔗 Запрос к агенту
     console.log("📡 Запрос к агенту:", message)
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/agent`, {
+    const response = await fetch(`${process.env.BASE_URL}/api/agent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: message }),
