@@ -1,36 +1,28 @@
-// lib/tools/supabaseTool.ts
-
 import { Tool } from 'langchain/tools';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export class SupabaseTool extends Tool {
   name = 'supabase_tool';
-  description = 'Позволяет добавлять записи в таблицу logs с вопросом и ответом';
+  description = 'Добавляет запись в таблицу chat_logs с вопросом и ответом';
 
-  async call(input: string): Promise<string> {
-    const [question, answer] = input.split('|||');
+  // ✅ Реализация обязательного метода _call
+  async _call(input: string): Promise<string> {
+    const [question, answer] = input.split('||');
 
-    if (!question || !answer) {
-      return '⚠️ Неверный формат. Используй: вопрос|||ответ';
-    }
-
-    const { error } = await supabase.from('chat_logs').insert([
-      {
-        question: question.trim(),
-        answer: answer.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    const { error } = await supabase.from('chat_logs').insert({
+      question: question?.trim() ?? '',
+      answer: answer?.trim() ?? '',
+    });
 
     if (error) {
-      return `Ошибка при записи в Supabase: ${error.message}`;
+      console.error('❌ Ошибка SupabaseTool:', error);
+      return '❌ Ошибка при сохранении в Supabase';
     }
 
-    return '✅ Вопрос и ответ сохранены в базе Supabase.';
+    return '✅ Сохранено в Supabase';
   }
 }
