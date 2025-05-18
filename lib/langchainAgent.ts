@@ -2,6 +2,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 import { logChatToSupabase } from './logChatToSupabase';
 import { Tool } from 'langchain/tools';
+import { SupabaseTool } from './tools/supabaseTool';
 
 // 🛠️ Временный кастомный инструмент — EchoTool
 class EchoTool extends Tool {
@@ -27,8 +28,11 @@ export async function runAgent(query: string): Promise<string> {
       openAIApiKey: process.env.OPENAI_API_KEY!,
     });
 
-    // ⛑️ Добавляем хотя бы один tool, чтобы не падало
-    const tools = [new EchoTool()];
+    // ✅ Подключаем и EchoTool, и SupabaseTool
+    const tools = [
+      new EchoTool(),
+      new SupabaseTool() // 🔌 Вот он — кастомный инструмент
+    ];
 
     const executor = await initializeAgentExecutorWithOptions(tools, model, {
       agentType: 'openai-functions',
@@ -38,7 +42,6 @@ export async function runAgent(query: string): Promise<string> {
     const result = await executor.run(query);
     console.log("✅ Ответ от агента:", result);
 
-    // 💾 Сохраняем результат в Supabase
     await logChatToSupabase(query, result);
 
     return result;
