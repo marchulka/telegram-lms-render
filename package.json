@@ -4,7 +4,8 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "dev": "next dev"
   },
   "dependencies": {
     "@langchain/community": "^0.0.34",
